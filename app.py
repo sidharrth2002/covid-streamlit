@@ -19,3 +19,13 @@ fig, ax = plt.subplots(figsize=(20, 20))
 st.markdown('### Correlations between Cases Among States')
 sns.heatmap(cases_correlations, annot=True, ax=ax)
 st.write(fig)
+
+#q1 :
+
+#q2 : daily new cases
+
+#q3 : what is the reasons cause that the numbers of new cases increase
+#number of import case
+#number of testing
+
+#q4 :
