@@ -9,8 +9,6 @@ cases_malaysia = pd.read_csv('./data/cases_malaysia.csv')
 cases_state = pd.read_csv('./data/cases_state.csv')
 deaths_state = pd.read_csv('./data/deaths_state.csv')
 
-
-
 cases_state = cases_state.pivot(index='date', columns='state', values='cases_new')
 st.write('Correlations')
 cases_correlations = cases_state.corr(method='pearson')
