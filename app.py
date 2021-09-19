@@ -237,7 +237,6 @@ st.markdown(
 
 st.markdown('Pahang')
 get_best_features(states['Pahang'], st, display_scatter_plots=1)
-
 st.markdown('''
 We know that the four best features are quarantine, discharge_quarantine, icu and hospital_admitted.
 For quarantine and discharge_quarantine, we can see that there is a strong, positive and linear relationship.
@@ -245,21 +244,24 @@ For quarantine and discharge_quarantine, we can see that there is a strong, posi
 
 st.markdown('Kedah')
 get_best_features(states['Kedah'], st, display_scatter_plots=1)
+st.write('''
+The 4 best features are hospital_discharged, icu, discharge_quarantine and hospital_admitted.
+icu and hospital_admitted have a stronger fit, but the other features have passed the feature selection tests.
+''')
+
 
 st.markdown('Johor')
 get_best_features(states['Johor'], st, display_scatter_plots=1)
+st.write('''
+Write description
+''')
 
 st.markdown('Selangor')
 get_best_features(states['Selangor'], st, display_scatter_plots=1)
+st.write('''
+Write description
+''')
 
-# This global variable 'bar_plot' will be used later on
-
-#q1 :
-
-#q2 : daily new cases
-
-#q3 : what is the reasons cause that the numbers of new cases increase
-#number of import case
-#number of testing
-
-#q4 :
+st.markdown('## Modeling')
+sidebar = st.sidebar
+classifier = sidebar.selectbox('Which Classifier do you want to use?', ('SVM', 'Decision Tree', 'Random Forest Classifier'))
