@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import altair as alt
 from altair import Chart, X, Y, Axis, SortField, OpacityValue
-from functions import get_result, get_best_features
+from functions import get_result, get_best_features, best_features_state, linear_regression, random_forest_regressor, svm_regression
 import numpy as np
 import plotly.express as px
 from plotly.graph_objects import Heatmap
@@ -15,22 +15,37 @@ st.title('An Exploration of Covid-19 in Malaysia')
 cases_malaysia = pd.read_csv('./data/cases_malaysia.csv')
 cases_malaysia.fillna(0, inplace=True)
 cases_state = pd.read_csv('./data/cases_state.csv')
+cases_state.drop(columns=['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1', 'Unnamed: 0.1.1.1'], inplace=True)
+
 cases_state_pivoted = cases_state.pivot_table(index='date', columns='state', values='cases_new')
 cases_state.fillna(0, inplace=True)
 deaths_state = pd.read_csv('./data/deaths_state.csv')
+deaths_state.fillna(0, inplace=True)
+
 deaths_pivoted = deaths_state.pivot_table(index='date', columns='state', values='deaths_new')
 tests_state = pd.read_csv('./data/tests_state.csv')
 tests_pivoted = tests_state.pivot(index='date', columns='state', values='total')
+tests_state.fillna(0, inplace=True)
+tests_state.drop(columns=['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1', 'Unnamed: 0.1.1.1', 'Unnamed: 0.1.1.1.1'], inplace=True)
+tests_state.rename(columns={'total': 'tests'}, inplace=True)
 
 cases_state = pd.read_csv('./data/cases_state.csv', index_col=0)
 cases_state_pivoted = cases_state.pivot(index='date', columns='state', values='cases_new')
+
 deaths_state = pd.read_csv('./data/deaths_state.csv')
 deaths_state_pivoted = deaths_state.pivot(index='date', columns='state', values='deaths_new')
+
 tests_state = pd.read_csv('./data/tests_state.csv')
 tests_state_pivoted = tests_state.pivot(index='date', columns='state', values='total')
+tests_state.drop(columns=['Unnamed: 0', 'Unnamed: 0.1', 'Unnamed: 0.1.1', 'Unnamed: 0.1.1.1', 'Unnamed: 0.1.1.1.1'], inplace=True)
+tests_state.rename(columns={'total': 'tests'}, inplace=True)
+
 quarantine_state = pd.read_csv('./data/pkrc.csv')
+quarantine_state.fillna(0, inplace=True)
 quarantine_state_pivoted = quarantine_state.pivot(index='date', columns='state', values='admitted_covid')
 discharge_quarantine_state_pivoted = quarantine_state.pivot(index='date', columns='state', values='discharge_covid')
+quarantine_state.rename(columns={'beds': 'pkrc_beds', 'admitted_pui': 'pkrc_admitted_pui', 'admitted_covid': 'pkrc_admitted_covid', 'discharge_covid': 'pkrc_discharge_covid', 'admitted_total': 'pkrc_admitted_total'}, inplace=True)
+
 icu_state = pd.read_csv('./data/icu.csv')
 icu_state_pivoted = icu_state.pivot(index='date', columns='state', values='icu_covid')
 hospital = pd.read_csv('./data/hospital.csv')
@@ -40,6 +55,7 @@ population_state = pd.read_csv('./data/population.csv', index_col=0)
 
 states_list = ['Pahang', 'Kedah', 'Johor', 'Selangor']
 states = {}
+states_allfeatures = {}
 
 for state in states_list:
     df = pd.DataFrame()
@@ -53,6 +69,23 @@ for state in states_list:
     df['hospital_discharged'] = hospital_discharged_pivoted[state]
     df.fillna(0, inplace=True)
     states[state] = df
+
+for state in states_list:
+    df = cases_state[cases_state['state'] == state]
+    df = df.merge(deaths_state[deaths_state['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df = df.merge(tests_state[tests_state['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df = df.merge(quarantine_state[quarantine_state['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df = df.merge(icu_state[icu_state['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df = df.merge(hospital[hospital['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df = df.merge(tests_state[tests_state['state'] == state], how='left')
+    df.fillna(0, inplace=True)
+    df.set_index('date', inplace=True)
+    states_allfeatures[state] = df
 
 st.write(
     '''
@@ -76,12 +109,6 @@ st.write(
     '''
     The following EDA steps were performed:\n
     1. **Statistical Summary**: We used the `describe()` method to get a statistical summary of the cleaned data.\n
-    2. **Unique States**: What are the unique states in the dataset?\n
-    '''
-)
-
-st.write(
-    '''
     2. **Case Bar Charts Per Wave**: It is misleading to treat the entire pandemic as one time-series. The range of values are almost completely different, so we study trends per wave.\n
     '''
 )
@@ -227,41 +254,63 @@ st.write(deaths_correlation_Johor.iloc[1:4])
 st.markdown(
 '''
     ## Strong features/indicators to daily cases
-    We do a feature selection of 4 features using 4 methods and then do a final vote to choose the best features for each state.
-    The 4 methods are:\n
-    1. Variance Threshold (3)\n
+    For feature selection, we first handpick features we think is relevant from the full feature set
+    and then we delegate to 3 feature selection algorithms to further narrow done features for each state.
+    Several algorithms are used and a vote is then taken to select the final feature set.
+    The 3 algorithms are:\n
+    1. BORUTA\n
     2. Mutual Info Regression\n
-    3. Chi2 Test\n
     4. Recursive Feature Elimination (RFE)
 ''')
 
 st.markdown('Pahang')
-get_best_features(states['Pahang'], st, display_scatter_plots=1)
+get_best_features('Pahang', states_allfeatures['Pahang'], st, display_scatter_plots=1)
 st.markdown('''
 We know that the four best features are quarantine, discharge_quarantine, icu and hospital_admitted.
 For quarantine and discharge_quarantine, we can see that there is a strong, positive and linear relationship.
 ''')
 
 st.markdown('Kedah')
-get_best_features(states['Kedah'], st, display_scatter_plots=1)
+get_best_features('Kedah', states_allfeatures['Kedah'], st, display_scatter_plots=1)
 st.write('''
 The 4 best features are hospital_discharged, icu, discharge_quarantine and hospital_admitted.
 icu and hospital_admitted have a stronger fit, but the other features have passed the feature selection tests.
 ''')
 
-
 st.markdown('Johor')
-get_best_features(states['Johor'], st, display_scatter_plots=1)
+get_best_features('Johor', states_allfeatures['Johor'], st, display_scatter_plots=1)
 st.write('''
 Write description
 ''')
 
 st.markdown('Selangor')
-get_best_features(states['Selangor'], st, display_scatter_plots=1)
+get_best_features('Selangor', states_allfeatures['Selangor'], st, display_scatter_plots=1)
 st.write('''
 Write description
 ''')
 
-st.markdown('## Modeling')
-sidebar = st.sidebar
-classifier = sidebar.selectbox('Which Classifier do you want to use?', ('SVM', 'Decision Tree', 'Random Forest Classifier'))
+st.markdown('''
+    ## Modelling
+    ### Regression Models
+'''
+)
+regression_functions = {
+    'SVR': svm_regression,
+    'Linear Regression': linear_regression,
+    'Random Forest Regressor': random_forest_regressor
+}
+regressor_select = st.selectbox('Select a regressor to run.', ['SVR', 'Linear Regression', 'Random Forest Regressor'])
+
+pahang_regressor = regression_functions[regressor_select](states_allfeatures['Pahang'], best_features_state['Pahang'])
+kedah_regressor = regression_functions[regressor_select](states_allfeatures['Kedah'], best_features_state['Kedah'])
+johor_regressor = regression_functions[regressor_select](states_allfeatures['Johor'], best_features_state['Johor'])
+selangor_regressor = regression_functions[regressor_select](states_allfeatures['Selangor'], best_features_state['Selangor'])
+
+st.write(pahang_regressor)
+
+st.markdown('''
+## Modelling
+### Classification Models
+''')
+classifier_select = st.selectbox('Select a classifier to run.', ['SVM', 'Random Forest', 'Logistic Regression', 'Decision Tree'])
+classification_functions = {}
