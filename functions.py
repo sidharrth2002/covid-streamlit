@@ -45,6 +45,7 @@ def get_result(wave,wave_num,st) :
     temp = population.iloc[10]
     population.iloc[10] = population.iloc[12]
     population.iloc[12] = temp
+    print(population)
     #calculate the total cases for each states
     print('Wave '+ str(wave_num) +' : each states total cases')
     wave = wave.groupby(["state"]).agg({"cases_new": "sum"})
@@ -64,7 +65,7 @@ def get_result(wave,wave_num,st) :
     print('Wave '+ str(wave_num) +' : each states total cases / polution after normalize')
     
     outlierDetection = each_state_total_cases_devide_by_population
-    
+    st.table(outlierDetection)
     #display the boxplot of each state total_cases / Population
 
     print(outlierDetection)

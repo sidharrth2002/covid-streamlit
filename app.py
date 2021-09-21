@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit.proto.PlotlyChart_pb2 import PlotlyChart
 import seaborn as sns
 import matplotlib.pyplot as plt
 import altair as alt
@@ -108,10 +109,14 @@ st.markdown('## Exploratory Data Analysis')
 st.write(
     '''
     The following EDA steps were performed:\n
-    1. **Statistical Summary**: We used the `describe()` method to get a statistical summary of the cleaned data.\n
+    1. **Statistical Summary**: We used obtained a full statistical summary of the cleaned and transformed data.\n
     2. **Case Bar Charts Per Wave**: It is misleading to treat the entire pandemic as one time-series. The range of values are almost completely different, so we study trends per wave.\n
     '''
 )
+
+st.markdown('''
+    ### How have different states performed over the 3 waves in the pandemic?
+''')
 
 st.markdown('''
 ### The First Wave: Covid-19 in 2020
@@ -204,6 +209,23 @@ st.markdown(
     they are on different scales as long as they change in a similar pattern.
 ''')
 
+st.markdown('''
+    ## What does the general trend look like across the pandemic? Can spikes be attributed to certain events?
+    We can do a complete time series graph to observe the general trend and whether there have been sharp increases.
+''')
+
+plot = px.line(cases_malaysia, x='date', y='cases_new')
+st.plotly_chart(plot)
+st.markdown('''
+    In the news, we usually see the sudden rise in cases last year attributed to the Sabah election which took place on September 26 2020.
+    We asked ourselves whether there was an observable increase around that time. The graph shows that around early October, the scale of the cases
+    start to change incrementally, and almost form an exponential curve since.
+    Daily new cases have 3 other relative peaks:\n
+    1. January 30 2021: 5725 cases\n
+    2. May 29 2021: 9020 cases\n
+    3. August 26 2021: 24599 cases\n
+''')
+
 cases_correlation = cases_state_pivoted.corr()
 tests_correlation = tests_pivoted.corr()
 deaths_correlation = deaths_pivoted.corr()
@@ -266,51 +288,122 @@ st.markdown(
 st.markdown('Pahang')
 get_best_features('Pahang', states_allfeatures['Pahang'], st, display_scatter_plots=1)
 st.markdown('''
-We know that the four best features are quarantine, discharge_quarantine, icu and hospital_admitted.
-For quarantine and discharge_quarantine, we can see that there is a strong, positive and linear relationship.
+The top 6 features for Pahang are: tests, pkrc_admitted_covid, icu_covid, vent_covid and hosp_covid.
 ''')
 
 st.markdown('Kedah')
 get_best_features('Kedah', states_allfeatures['Kedah'], st, display_scatter_plots=1)
 st.write('''
-The 4 best features are hospital_discharged, icu, discharge_quarantine and hospital_admitted.
-icu and hospital_admitted have a stronger fit, but the other features have passed the feature selection tests.
+The top 6 features for Kedah are: pkrc_covid, icu_covid, beds_covid, admitted_covid and hosp_covid.
 ''')
 
 st.markdown('Johor')
 get_best_features('Johor', states_allfeatures['Johor'], st, display_scatter_plots=1)
 st.write('''
-Write description
+The top 6 features for Johor are: pkrc_covid, icu_covid, beds_covid, admitted_covid and hosp_covid.
 ''')
 
 st.markdown('Selangor')
 get_best_features('Selangor', states_allfeatures['Selangor'], st, display_scatter_plots=1)
 st.write('''
-Write description
+The top 6 features for Selangor are: vent_covid, pkrc_covid, icu_covid, beds_covid, admitted_covid and hosp_covid.
 ''')
 
 st.markdown('''
-    ## Modelling
-    ### Regression Models
+    ## Modelling for Different States
+    ### Classification and Regression Models
+    Models will not be run on Streamlit to make sure this page loads fast. For
+    alll training and hyperparameters, refer to the notebook.
+
+    For regression models, all relevant attributes are initially scaled.
+    For classification, we calculate the weighted averaged F1 score that takes into account the class imbalance.
 '''
 )
-regression_functions = {
-    'SVR': svm_regression,
-    'Linear Regression': linear_regression,
-    'Random Forest Regressor': random_forest_regressor
-}
-regressor_select = st.selectbox('Select a regressor to run.', ['SVR', 'Linear Regression', 'Random Forest Regressor'])
 
-pahang_regressor = regression_functions[regressor_select](states_allfeatures['Pahang'], best_features_state['Pahang'])
-kedah_regressor = regression_functions[regressor_select](states_allfeatures['Kedah'], best_features_state['Kedah'])
-johor_regressor = regression_functions[regressor_select](states_allfeatures['Johor'], best_features_state['Johor'])
-selangor_regressor = regression_functions[regressor_select](states_allfeatures['Selangor'], best_features_state['Selangor'])
+state_select = st.selectbox('Select a state.', ['Pahang', 'Kedah', 'Johor', 'Selangor'], key='state')
 
-st.write(pahang_regressor)
+if state_select == 'Pahang':
+    pahang_regression = {
+        'model': ['Support Vector Regression', 'Linear Regression', 'Random Forest Regression'],
+        'accuracy': [0.84037, 0.90272, 0.91098],
+        'Mean Squared Error': [0.00820, 0.00510, 0.00457]
+    }
+    pahang_classification = pd.DataFrame(pahang_regression)
+    st.table(pahang_regression)
 
-st.markdown('''
-## Modelling
-### Classification Models
-''')
-classifier_select = st.selectbox('Select a classifier to run.', ['SVM', 'Random Forest', 'Logistic Regression', 'Decision Tree'])
-classification_functions = {}
+    pahang_classification = {
+        'model': ['Support Vector Classification', 'Random Forest Classification', 'Logistic Regression'],
+        'accuracy': [0.9286, 0.9143, 0.9429],
+        'Weighted averaged F1 Score': [0.9134, 0.91448, 0.9206]
+    }
+    st.table(pahang_classification)
+
+    st.markdown('''
+        For Pahang, classification models generally do better because there is a lower chance of making a mistake.
+        They can be only 1 of 3 classes (Low, Medium and High).
+        The best performing Classification model is surprisingly Logistic Regression and the best performing regression
+        model is Random Forest Regression.
+    '''
+    )
+
+elif state_select == 'Kedah':
+    kedah_regression = {
+        'model': ['Support Vector Regression', 'Linear Regression', 'Random Forest Regression'],
+        'accuracy': [0.95649, 0.94769, 0.9663],
+        'Mean Squared Error': [0.0029, 0.0035, 0.0023]
+    }
+    st.table(kedah_regression)
+
+    kedah_classification = {
+        'model': ['Support Vector Classification', 'Random Forest Classification', 'Logistic Regression'],
+        'accuracy': [0.9265, 0.9412, 0.8971],
+        'Weighted averaged F1 Score': [0.9253, 0.9411, 0.8653]
+    }
+    st.table(kedah_classification)
+
+    st.markdown('''
+        The best performing Classification model is Random Forest Classification and the best performing regression
+        model is Random Forest Regression. The reason for this is maybe that Random Forest Regression is more robust to
+        outliers.
+    '''
+    )
+
+elif state_select == 'Johor':
+    johor_regression = {
+        'model': ['Support Vector Regression', 'Linear Regression', 'Random Forest Regression'],
+        'accuracy': [0.84401, 0.86624, 0.90511],
+        'Mean Squared Error': [0.00618, 0.00530, 0.00376]
+    }
+    st.table(johor_regression)
+
+    johor_classification = {
+        'model': ['Support Vector Classification', 'Random Forest Classification', 'Logistic Regression'],
+        'accuracy': [0.95385, 0.93846, 0.93846],
+        'Macro averaged F1 Score': [0.9527, 0.9385, 0.9234]
+    }
+    st.table(johor_classification)
+
+    st.markdown('''
+        Once again, Random Forest Regression prevails in the regression arena with the highest accuracy and lowest MSE.
+        Support Vector Classification is the best performing classification model in this case.
+    ''')
+
+elif state_select == 'Selangor':
+    selangor_regression = {
+        'model': ['Support Vector Regression', 'Linear Regression', 'Random Forest Regression'],
+        'accuracy': [0.94619, 0.96082, 0.9566],
+        'Mean Squared Error': [0.0029, 0.0035, 0.0023]
+    }
+    st.table(selangor_regression)
+
+    selangor_classification = {
+        'model': ['Support Vector Classification', 'Random Forest Classification', 'Logistic Regression'],
+        'accuracy': [0.97170, 0.93396, 0.96226],
+        'Macro averaged F1 Score': [0.97229, 0.93240, 0.95952]
+    }
+    st.table(selangor_classification)
+    st.markdown('''
+        The best performing Regression model for Selangor is Linear Regression, which may suggest a stronger linear relationship between the
+        features and the target. The best classification model is Support Vector Classification. One intersting observation is that Selangor's cases
+        are mostly High, so F1 score is a safer metric to use than accuracy to decide.
+    ''')
