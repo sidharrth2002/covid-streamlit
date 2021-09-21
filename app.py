@@ -10,6 +10,7 @@ import numpy as np
 import plotly.express as px
 from plotly.graph_objects import Heatmap
 from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
 st.title('An Exploration of Covid-19 in Malaysia')
 
@@ -53,6 +54,10 @@ hospital = pd.read_csv('./data/hospital.csv')
 hospital_admitted_pivoted = hospital.pivot(index='date', columns='state', values='admitted_covid')
 hospital_discharged_pivoted = hospital.pivot(index='date', columns='state', values='discharged_covid')
 population_state = pd.read_csv('./data/population.csv', index_col=0)
+
+clusters = pd.read_csv('./data/clusters.csv')
+clusters.reset_index(inplace=True)
+cluster_cases = clusters.pivot_table(index = 'category', values = ['cases_total', 'tests'], aggfunc = 'sum')
 
 states_list = ['Pahang', 'Kedah', 'Johor', 'Selangor']
 states = {}
@@ -111,6 +116,8 @@ st.write(
     The following EDA steps were performed:\n
     1. **Statistical Summary**: We used obtained a full statistical summary of the cleaned and transformed data.\n
     2. **Case Bar Charts Per Wave**: It is misleading to treat the entire pandemic as one time-series. The range of values are almost completely different, so we study trends per wave.\n
+    3. **Analysis of Covid-19 clusters**: A well-known phenomenon known to cause sudden spikes.
+    4. **Linking time-series spikes with real events**: When cases rise suddenly on a particular day, there's usually a reason.
     '''
 )
 
@@ -172,8 +179,8 @@ increase.
 
 st.markdown('''
     ### Outliers
-    We first group the data by state and wave. Then we normalise the data by the population of the state
-    to account for the different sizes. A state with an abnormally different number of cases in a wave is considered an outlier.
+    We first group the data by state and wave. Then we divide the data by the population of the state
+    to account for the different sizes, afterwhich the column is scaled between 0 and 1. A state with an abnormally different number of cases in a wave is considered an outlier.
 ''')
 num_of_state = 16
 wave1_each_states = cases_state.iloc[:170*num_of_state]
@@ -202,13 +209,6 @@ st.markdown('''
     More of the country is at a high risk level, with the exception of perhaps Perlis, which stayed consistently low across all 3 waves.
 ''')
 
-st.markdown(
-'''
-    ## What states exhibit strong correlation with (i) Pahang and (ii) Johor?\n
-    We can study correlation based on case number, deaths and testing. It doesn't matter if
-    they are on different scales as long as they change in a similar pattern.
-''')
-
 st.markdown('''
     ## What does the general trend look like across the pandemic? Can spikes be attributed to certain events?
     We can do a complete time series graph to observe the general trend and whether there have been sharp increases.
@@ -224,6 +224,52 @@ st.markdown('''
     1. January 30 2021: 5725 cases\n
     2. May 29 2021: 9020 cases\n
     3. August 26 2021: 24599 cases\n
+''')
+
+st.markdown('''
+    ## How influential are different clusters in the country?
+    **"Kluster Langkawi", "Kluster Mamak", "Kluster Mahkamah"**\n
+    We often hear these terms in the news. A cluster refers to an aggregation of cases of a disease given the
+    contagious nature of Covid-19. When there are sudden spikes, these can often be attributed to a new cluster, but what are these clusters
+    and which clusters are more influential than others?
+''')
+
+st.table(cluster_cases)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    col1.subheader('Cases Total')
+    cluster_cases_box = px.box(cluster_cases, x='cases_total', width=800, height=300)
+    st.plotly_chart(cluster_cases_box)
+
+with col2:
+    col2.subheader('Tests')
+    cluster_cases_tests = px.box(cluster_cases, x='tests', width=500, height=300)
+    st.plotly_chart(cluster_cases_tests)
+
+grouped_clusters = go.Figure(data=[
+    go.Bar(name='Total Cases', x=cluster_cases.index, y=cluster_cases['cases_total']),
+    go.Bar(name='Tests', x=cluster_cases.index, y=cluster_cases['tests'])
+])
+grouped_clusters.update_layout(barmode='group')
+st.plotly_chart(grouped_clusters)
+
+st.markdown('''
+    The first observation we can make is that with more testing, there are more cases, given how similar
+    the shape of the 2 boxplots are. There is a right skew, indicating that the majority of clusters are on the upper
+    end of the scale. Workplace clusters prove to be the most dramatic, sitting as upper outliers in both graphs. We can perhaps
+    attribute this to inaction and many businesses staying open during the different MCOs (e.g. Top Glove).
+
+    Religious clusters, that often appear in the news, are the lowest of all. Maybe religious clusters are easier to regulate and take
+    swift action, which may just be a matter of shutting down the institution.
+''')
+
+st.markdown(
+'''
+    ## How do the attributes of different states correlate with Pahang and Johor?\n
+    We can study correlation based on case number, deaths and testing. It doesn't matter if
+    they are on different scales as long as they change in a similar pattern.
 ''')
 
 cases_correlation = cases_state_pivoted.corr()
