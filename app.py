@@ -13,6 +13,8 @@ from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 st.title('An Exploration of Covid-19 in Malaysia')
+st.markdown('## Working with openly available Covid-19 data to extract insights')
+st.subheader('Sidharrth Nagappan, Eugene Kan and Tan Zhi Hang, 2021')
 
 cases_malaysia = pd.read_csv('./data/cases_malaysia.csv')
 cases_malaysia.fillna(0, inplace=True)
@@ -115,7 +117,7 @@ st.write(
     '''
     The following EDA steps were performed:\n
     1. **Statistical Summary**: We used obtained a full statistical summary of the cleaned and transformed data.\n
-    2. **Case Bar Charts Per Wave**: It is misleading to treat the entire pandemic as one time-series. The range of values are almost completely different, so we study trends per wave.\n
+    2. **Case Bar Charts and Box Plots Per Wave**: It is misleading to treat the entire pandemic as one time-series. The range of values are almost completely different, so we study trends per wave.\n
     3. **Analysis of Covid-19 clusters**: A well-known phenomenon known to cause sudden spikes.
     4. **Linking time-series spikes with real events**: When cases rise suddenly on a particular day, there's usually a reason.
     '''
@@ -206,6 +208,7 @@ st.markdown('''
 get_result(wave3_each_states, 3, st)
 st.markdown('''
     In the third wave, the distribution is almost symmetric. The case number for the worst hit state has increased, as observed earlier.
+    Other phenomena such as the delta variant were starting to be reported around this time.
     More of the country is at a high risk level, with the exception of perhaps Perlis, which stayed consistently low across all 3 waves.
 ''')
 
@@ -256,13 +259,14 @@ grouped_clusters.update_layout(barmode='group')
 st.plotly_chart(grouped_clusters)
 
 st.markdown('''
-    The first observation we can make is that with more testing, there are more cases, given how similar
-    the shape of the 2 boxplots are. There is a right skew, indicating that the majority of clusters are on the upper
+    The first observation we can make is that with more testing, there are more cases. Some clusters are more
+    aggressively tested than others, which may be because of private funding (e.g. workplaces).
+    There is a right skew, indicating that the majority of clusters are on the upper
     end of the scale. Workplace clusters prove to be the most dramatic, sitting as upper outliers in both graphs. We can perhaps
     attribute this to inaction and many businesses staying open during the different MCOs (e.g. Top Glove).
 
-    Religious clusters, that often appear in the news, are the lowest of all. Maybe religious clusters are easier to regulate and take
-    swift action, which may just be a matter of shutting down the institution.
+    Religious clusters, that often appear in the news, are the lowest of all. Maybe religious clusters are easier to regulate and swift
+    action can be taken, which may just be a matter of shutting down the institution.
 ''')
 
 st.markdown(
@@ -450,6 +454,11 @@ elif state_select == 'Selangor':
     st.table(selangor_classification)
     st.markdown('''
         The best performing Regression model for Selangor is Linear Regression, which may suggest a stronger linear relationship between the
-        features and the target. The best classification model is Support Vector Classification. One intersting observation is that Selangor's cases
+        features and the target. The best classification model is Support Vector Classification. One interesting observation is that Selangor's cases
         are mostly High, so F1 score is a safer metric to use than accuracy to decide.
     ''')
+
+st.markdown('''
+    Overall, no one model consistently performs best across the different states because they each use different states,
+    but we can definitely credit the consistency of the random forest models.
+''')
