@@ -125,6 +125,7 @@ st.write(
 
 st.markdown('''
     ### How have different states performed over the 3 waves in the pandemic?
+    *Take a closer look at the y-axis scales of the graph in each wave to avoid being misled. It is also an indication of just how bad things have gotten since the start of the pandemic.*
 ''')
 
 st.markdown('''
@@ -161,7 +162,7 @@ st.altair_chart(wave2_bar)
 
 st.markdown('''
 ### The Third Wave: Covid-19
-#### Haunting Malaysia from 2020-03-30 to Now
+#### Haunting Malaysia from 2020-03-31 to Now
 ''')
 st.markdown('\n\n')
 wave3 = cases_malaysia.iloc[340:]
@@ -222,11 +223,16 @@ st.plotly_chart(plot)
 st.markdown('''
     In the news, we usually see the sudden rise in cases last year attributed to the Sabah election which took place on September 26 2020.
     We asked ourselves whether there was an observable increase around that time. The graph shows that around early October, the scale of the cases
-    start to change incrementally, and almost form an exponential curve since.
-    Daily new cases have 3 other relative peaks:\n
-    1. January 30 2021: 5725 cases\n
-    2. May 29 2021: 9020 cases\n
-    3. August 26 2021: 24599 cases\n
+    start to change incrementally, and almost form an exponential curve since.\n
+    Daily new cases hit other peaks and slumps:\n
+    1. *January 30 2021: 5725 cases*\n
+    Some states started switching between MCO, CMCO and RMCO depending on their case number starting from 11 January 2021.
+    While most states were under strict lockdown, the states will lower cases opened up again, which may be the cause of the gentle peak.
+    The reason the peak is not too drastic is perhaps because none of the bigger states like Selangor or Kuala Lumpur had eased restrictions yet.\n
+    2. *May 29 2021: 9020 cases*\n
+    Too many factors at play here.\n
+    3. *August 26 2021: 24599 cases*\n
+    The country started to open up once again and a new all-time is established. The first delta variant case is reported in Kelantan on July 21, 2021. After this, there is a steady rise to hit the next relative maximum.\n
 ''')
 
 st.markdown('''
@@ -265,8 +271,7 @@ st.markdown('''
     end of the scale. Workplace clusters prove to be the most dramatic, sitting as upper outliers in both graphs. We can perhaps
     attribute this to inaction and many businesses staying open during the different MCOs (e.g. Top Glove).
 
-    Religious clusters, that often appear in the news, are the lowest of all. Maybe religious clusters are easier to regulate and swift
-    action can be taken, which may just be a matter of shutting down the institution.
+    Religious clusters, that often appear in the news, are the lowest of all. Maybe religious clusters are easier to regulate and swift action can be taken, which may just be a matter of shutting down the institution.
 ''')
 
 st.markdown(
